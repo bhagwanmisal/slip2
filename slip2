@@ -1,0 +1,163 @@
+#include <stdio.h>
+#include <stdlib.h>
+int main()
+{
+ FILE *f;
+ char ch;
+ f=fopen("abc.txt","r");
+ if(f==NULL)
+ {
+ printf("file not found");
+ exit(0);
+ }
+ while(!feof(f))
+ {
+ ch=fgetc(f);
+ printf("%c",ch);
+ }
+ fclose(f);
+}
+#include <stdio.h>
+#include <string.h>
+int main()
+{
+ char s1[20],s2[20];
+ int ch;
+ printf("enter str1 and str2");
+ gets(s1);
+ gets(s2);
+ printf("MENU\n1.Uppercase\n2.Copy 2nd to 1st\n3.Compare\n4.Concatnet\n");
+ printf("Enter choice");
+ scanf("%d",&ch);
+ switch(ch)
+ {
+ case 1: strupr(s1);
+ strupr(s2);
+ printf("1st str=%s\n2nd str=%s\n",s1,s2);
+ break;
+ case 2: strcpy(s1,s2);
+ printf("Copied string=%s",s1);
+ break;
+ case 3: strcmp(s1,s2);
+ if(s1>s2)
+ printf("Greater str s1=%s",s1);
+ else
+ printf("Greater str s2=%s",s2);
+ break;
+ case 4: strcat(s1,s2);
+ printf("Concatnet=%s",s1);
+ break;
+ }
+}
+
+create table bus(bus_no int primary key,capacity int,depot_name varchar(20));
+CREATE TABLE
+postgres=# insert into bus values(101,40,'shrirampur');
+INSERT 0 1
+postgres=# insert into bus values(102,50,'rampur');
+INSERT 0 1
+postgres=# insert into bus values(103,35,'Belapur');
+INSERT 0 1
+postgres=# select * from bus;
+ bus_no | capacity | depot_name 
+--------+----------+------------
+ 101 | 40 | shrirampur
+ 102 | 50 | rampur
+ 103 | 35 | Belapur
+(3 rows)
+
+RDBMS
+create table route(route_no int primary key,source varchar(20),no_of_station int);
+CREATE TABLE
+postgres=# insert into route values(111,'pune',4);
+INSERT 0 1
+postgres=# insert into route values(112,'mumbai',6);
+INSERT 0 1
+postgres=# insert into route values(113,'kopargaon',3);
+INSERT 0 1
+postgres=# select * from route
+postgres-# ;
+ route_no | source | no_of_station 
+----------+-----------+---------------
+ 111 | pune | 4
+ 112 | mumbai | 6
+ 113 | kopargaon | 3
+create table b_r(bus_no int references bus(bus_no),route_no int references route(route_no));
+CREATE TABLE
+postgres=# insert into b_r values(101,112)
+postgres-# ;
+INSERT 0 1
+postgres=# insert into b_r values(103,113);
+INSERT 0 1
+postgres=# insert into b_r values(103,112);
+INSERT 0 1
+postgres=# 
+postgres=# 
+postgres=# insert into b_r values(102,111);
+INSERT 0 1
+postgres=# select * from b_r;
+ bus_no | route_no 
+--------+----------
+ 101 | 112
+ 103 | 113
+ 103 | 112
+ 102 | 111
+create or replace function disp_route(r_no int) returns void
+postgres-# as
+postgres-# $$
+postgres$# declare
+postgres$# ans route%rowtype;
+postgres$# begin
+postgres$# select * into ans from route where route_no=r_no;
+postgres$# raise notice'Route no=%',ans.route_no;
+postgres$# raise notice'Source=%',ans.source;
+postgres$# raise notice'No of stations=%',ans.no_of_station;
+postgres$# end;
+postgres$# $$
+postgres-# language plpgsql;
+CREATE FUNCTION
+postgres=# select disp_route(111);
+NOTICE: Route no=111
+NOTICE: Source=pune
+NOTICE: No of stations=4
+create or replace function f1() returns trigger
+postgres-# as
+postgres-# $$
+postgres$# begin
+postgres$# if(new.no_of_station<2)then
+postgres$# raise exception'Staions should not be less than 2';
+postgres$# end if;
+postgres$# end;
+postgres$# $$
+postgres-# language plpgsql;
+CREATE FUNCTION
+create trigger t1
+postgres-# before insert on route for each row
+postgres-# execute procedure f1();
+CREATE TRIGGER
+insert into route values(114,'shirdi',1);
+ERROR: Staions should not be less than 2
+CONTEXT: PL/pgSQL function f1() line 4 at RAISE
+postgres=# create or replace function fun(b_no int) returns void
+postgres-# as
+postgres-# $$
+postgres$# declare
+postgres$# c1 cursor for select route.* from route,bus,b_r where bus.bus_no=b_r.bus_no
+postgres$# AND route.route_no=b_r.route_no
+postgres$# AND bus.bus_no=b_no;
+postgres$# r1 route%rowtype;
+postgres$# begin
+postgres$# for r1 in c1
+postgres$# loop
+postgres$# raise notice'Route no=%',r1.route_no;
+postgres$# raise notice'Source=%',r1.source;
+postgres$# raise notice'No of station=%',r1.no_of_station;
+postgres$# end loop; 
+postgres$# end; 
+postgres$# $$
+postgres-# language plpgsql;
+CREATE FUNCTION
+postgres=# select fun(101);
+NOTICE: Route no=112
+NOTICE: Source=mumbai
+NOTICE: No of station=6
